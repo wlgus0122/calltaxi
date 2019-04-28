@@ -1,0 +1,70 @@
+---
+title: "Assignment"
+author: "Hyunju"
+date: "2019년 4월 28일"
+output: ioslides_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## 과제
+- 변수 생성
+    - 희망-탑승
+    - 요일
+- 요일별 경향성 파악
+- 차량 운행 숫자 상관관계
+
+## 데이터 개요
+```{r data, include=FALSE}
+library(readxl)
+library(lubridate)
+library(knitr)
+data1=read_excel(path="C:/Users/hyunju/Desktop/data/data1.xlsx",col_names = TRUE)
+
+# 희망-탑승 변수 생성
+data1["new"]=data1[3]-data1[4]
+
+#요일 변수 생성
+
+data1["wd"]=wday(as.Date(data1$기준일))
+```
+
+```{r data0}
+print(kable(data1))
+```
+
+
+
+## 변수 설명
+
+``` {r data explanation}
+summary(data1)
+```
+
+## 요일별 경향성 파악
+**어느 요일에 가장 많이 사용할까 ? ><**
+```{r wd freq}
+plot(data1$new~data1$wd,xlab="weekdays",ylab = "freq_diff")
+#cor(data$new,data$wd)
+```
+
+## 상관관계 분석 
+
+```{r corr, echo = FALSE}
+sprintf("희망-탑승 상관계수 : %f", cor(data1$new,data1$차량운행))
+print(cor.test(data1$new,data1$차량운행))
+
+```
+
+## 상관관계 분석 
+```{r, echo=FALSE}
+plot(data1$차량운행~data1$new)
+```
+
+## 상관관계 분석 
+```{r, echo=FALSE}
+
+lm(data1$차량운행~data1$new)
+```

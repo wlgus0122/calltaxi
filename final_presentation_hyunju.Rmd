@@ -1,0 +1,140 @@
+---
+title: "자살공화국, 한국"
+subtitle: "최근 30년 간 자살률 추이 탐색"
+author: "Hyunju"
+date: "2019년 6월 13일"
+output: ioslides_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## 자살공화국 
+* 2016년 통계 기준 (출처: [2018 자살예방백서](http://spckorea-stat.or.kr/boadpublishview.do))
+1. 자살은 전체 사망원인의 5위
+1. 자살 사망자 한 해 13,092명
+1. 자살률 25.8명/10만명 
+
+![_마포대교 생명의 다리_](http://img.etoday.co.kr/pto_db/2013/05/20130514083847_298667_500_338.jpg){ width=50% } 
+
+## OECD 국가 자살률
+![](https://raw.githubusercontent.com/wlgus0122/ds_yonsei/master/suicide%20rate.PNG){ width=80% } 
+
+## OECD 국가 자살률 
+- 13년 간 OECD 자살률 1위 기록(2005-2017년)
+- 2018년 OECD 자살률 2위로 하락
+
+
+
+- 2018년에 한국 자살률이 낮아진 것일까? 
+
+## 리투아니아의 OECD 가입
+![](https://post-phinf.pstatic.net/MjAxODEwMjlfOCAg/MDAxNTQwODAwOTg5Mjcx.q6xn0BY5O9p5_3_oGUAEurtLd9siShzFQ6j7v2zoyKMg.SJMISOpMJzbiTtcrHEix_CnTJGjiplgpxwSa3tIKNVog.PNG/mug_obj_154080098894994508.png?type=w1080){ width=50% } 
+
+## 자살로 인한 비용
+- 자살로 인한 사회적 손실:9.4조원(2015년 한 해 기준)
+- 특히 노인 자살의 비율이 높게 나타남 
+![](http://www.samsunghospital.com/upload/editor/images/senior%20sucide%20(2)(1).jpg)
+
+## 노인 자살의 원인 
+![](http://www.samsunghospital.com/upload/editor/images/senior%20sucide%20(1).jpg)
+
+
+## 국가 목표 
+2022년까지 자살자 수를 10만 명 당 17.0명으로 감소시키는 것
+
+* _자살률이 가장 높았던 2011년의 절반 수준_
+
+## 관련 법률 
+[자살예방 및 생명존중문화 조성을 위한 법률](http://www.law.go.kr/LSW/lsInfoP.do?lsiSeq=206690#0000)
+
+
+제7조: 자살예방기본계획의 수립
+
+1. 국가는 자살예방정책을 효과적으로 추진하기 위하여 자살예방기본계획(이하 "기본계획"이라 한다)을 5년마다 수립하여야 한다.
+1. 기본계획에는 다음 각 호의 사항이 포함되어야 한다.  
+    - 생명존중문화의 조성
+    - 자살상담매뉴얼 개발 및 보급
+    - 아동ㆍ청소년ㆍ중년층ㆍ노인 등 생애주기별 자살예방대책
+    - 정보통신 등 다양한 매체를 이용한 자살예방체계 구축
+    - 자살 감시체계의 구축
+    - 자살예방 교육 및 훈련
+    - 자살예방에 대한 연구지원
+
+
+## 연구 목적
+최근 30년 동안의 전세계 자살률 추이를 탐색하고
+한국의 자살률 변화 추이와 비교한다. 
+
+
+## 분담
+- 지현주: 데이터 소개 
+- 강형구: 데이터 시각화
+- 윤예슬: 데이터 시각화(API 이용)
+
+## 데이터
+
+[Suicide Rates Overview 1985 to 2016](https://www.kaggle.com/russellyates88/suicide-rates-overview-1985-to-2016)
+
+
+변수 | 변수명 | 변수 | 변수명
+--- | --- | --- | --- 
+국가 | country | **연도** | year 
+성별 | sex | **연령대** | age
+자살자 수 | suicides_no | **인구** | population
+자살률 | suicides/100k pop | **Human Development Index** | HDI for year 
+GDP | gdp_for_year | **1인당 GDP** | gdp_per_capita
+
+## 데이터 소개
+
+```{r}
+# 데이터 불러오기 
+sui_data <- read.csv ("C:/Users/hyunju/Desktop/suicide/raw_data.csv")
+
+# 변수명 설정 
+names(sui_data) <- c("국가"	,"연도"	,"성별",	"연령대"	,"자살자 수",	"인구",	"자살률"	,"국가-연도" , "HDI" , "GDP" , "1인당 GDP" , "세대")
+
+summary(sui_data)
+```
+
+
+## 한국 data  
+
+```{r}
+sui_data_ko <- read.csv ("C:/Users/hyunju/Desktop/suicide/raw_data_ko.csv")
+
+sui_data_ko
+```
+
+
+
+## 한국 남성의 자살률 변화 
+
+
+```{r, makeup=FALSE}
+library(tidyverse)
+library(ggplot2)
+
+name<-c("want", "experience")
+percentage<-c(37.1, 5.3)
+
+barplot(percentage, names=name,
+        main="장애인 콜택시 이용 희망 비율과 실제 이용 비율")
+```
+
+## 한국 남성의 자살률 변화
+```{r, echo=FALSE}
+plot_ko_male <- read.csv ("C:/Users/hyunju/Desktop/suicide/korea_plot_male.csv")
+
+ggplot(plot_ko_male, aes(x=year, y=suicides, shape=age)) + geom_point(aes(size=suicides))
+```
+
+## 한국 여성의 자살률 변화
+```{r}
+plot_ko_female <- read.csv ("C:/Users/hyunju/Desktop/suicide/korea_plot_female.csv")
+
+ggplot(plot_ko_female, aes(x=year, y=suicides, shape=age)) + geom_point(aes(size=suicides))
+```
+
+

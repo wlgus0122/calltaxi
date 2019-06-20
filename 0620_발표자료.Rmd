@@ -1,0 +1,214 @@
+---
+title: "자살률 분석과 시각화"
+output: ioslides_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE,message = FALSE)
+```
+
+## 목차
+   
+   -사용 언어
+  
+   -데이터 프레임 형성
+  
+   -시각화 결과
+
+
+## 사용 언어
+   
+    - ggplot
+    
+    - ploty
+
+
+
+## 데이터 프레임 형성
+
+```{r, echo=FALSE}
+library(tidyverse)
+library(extrafont)
+loadfonts()
+suicide <- read_csv("data/data.csv")
+
+
+group <- suicide %>% 
+  select('year','country','sex','suicides_no','population','suicides.100k.pop','gdp_per_capita','age') %>% 
+  arrange(country,year) %>% 
+  group_by()
+
+suicide1 =group %>% 
+  fill('population','suicides.100k.pop','gdp_per_capita',.direction = 'up') %>% 
+  fill('population','suicides.100k.pop','gdp_per_capita',.direction = 'down') %>% 
+  ungroup() %>% 
+  filter(year<2000)
+
+
+suicide2 =group %>% 
+  fill('population','suicides.100k.pop','gdp_per_capita',.direction = 'down') %>% 
+  fill('population','suicides.100k.pop','gdp_per_capita',.direction = 'up') %>% 
+  ungroup() %>% 
+  filter(year>=2000)
+
+suicides = rbind(suicide1,suicide2)
+
+glimpse(suicides)
+
+
+```
+
+## 시각화 1 -한국의 자살룰 변화
+
+```{r,echo=FALSE,warning=FALSE}
+library(plotly)
+suicides['year_age_country'] = sprintf("%s.%s.%s", suicides$age, suicides$year,suicides$country)
+
+suicides_by_age = suicides %>% 
+  group_by(year_age_country) %>% 
+  summarize(
+    year=head(year,1),
+    age=head(age,1),
+    country = head(country,1),
+    population=sum(population),
+    suicides_no=sum(suicides_no),
+    suicide_per_100k=sum(population * suicides.100k.pop)/(as.numeric(sum(population))*n()),
+    gdp_per_capita=mean(gdp_per_capita)
+  )
+accumulate_by = function(dat, var) {
+  var <- lazyeval::f_eval(var, dat)
+  lvls <- plotly:::getLevels(var)
+  dats <- lapply(seq_along(lvls), function(x) {
+    cbind(dat[var %in% lvls[seq(1, x)], ], frame = lvls[[x]])
+  })
+  dplyr::bind_rows(dats)
+}
+ 
+d <- suicides_by_age %>% 
+  filter(country == 'Republic of Korea') %>% 
+  accumulate_by(~year)
+
+plt1 = d %>%
+  plot_ly(
+    x = ~year, 
+    y = ~suicide_per_100k,
+    split = ~age,
+    frame = ~frame,  
+    type = 'scatter',
+    mode = 'lines',
+    color = ~age
+  ) %>%
+  layout(
+    title = "한국 연령별 자살률의 변화, 1985 - 2016"
+  ) %>%
+  animation_opts(
+    frame = 100, 
+    transition = 0, 
+    redraw = FALSE
+  ) %>%
+  animation_slider(
+    hide = T
+  ) %>%
+  animation_button(
+    x = 1, xanchor = "right", y = 0, yanchor = "bottom"
+  )
+plt1
+```
+
+## 시각화 2 세계 자살률의 변화
+```{r,echo=FALSE,warning=FALSE}
+library(plotly)
+accumulate_by = function(dat, var) {
+  var <- lazyeval::f_eval(var, dat)
+  lvls <- plotly:::getLevels(var)
+  dats <- lapply(seq_along(lvls), function(x) {
+    cbind(dat[var %in% lvls[seq(1, x)], ], frame = lvls[[x]])
+  })
+  dplyr::bind_rows(dats)
+}
+
+suicides_by_age['year_age'] = sprintf('%s.%s', suicides_by_age$year, suicides_by_age$age)
+
+ c <- suicides_by_age %>%
+   filter(country != 'Republic of Korea') %>%
+   group_by(year_age) %>% 
+   summarize(
+     year=head(year,1),
+     age=head(age,1),
+     population=sum(population),
+     suicide_no=sum(suicides_no),
+     suicide_per_100k =sum(population*suicide_per_100k)/(as.numeric(sum(population))*n())
+   ) %>% 
+  accumulate_by(~year)
+
+plt2 = c %>%
+  plot_ly(
+    x = ~year, 
+    y = ~suicide_per_100k,
+    split = ~age,
+    frame = ~frame,  
+    type = 'scatter',
+    mode = 'lines',
+    color = ~age
+  ) %>%
+  layout(
+    title = "세계 연령별 자살률의 변화, 1985 - 2016"
+  ) %>%
+  animation_opts(
+    frame = 100, 
+    transition = 0, 
+    redraw = FALSE
+  ) %>%
+  animation_slider(
+    hide = T
+  ) %>%
+  animation_button(
+    x = 1, xanchor = "right", y = 0, yanchor = "bottom"
+  )
+plt2
+```
+
+
+## 시각화 3 -한국과 세계의 비교
+```{r,echo=FALSE,warning=FALSE}
+d['label'] = sprintf('%s %s', d$country, d$age)
+c['label'] = sprintf('World Average %s', c$age)
+d_and_c = rbind(select(d, 'label', 'year', 'suicide_per_100k', 'age', 'frame'), 
+                 select(c, 'label', 'year', 'suicide_per_100k', 'age', 'frame'))
+plt3 = plot_ly() %>%
+         add_trace(
+             x = ~year, 
+             y = ~suicide_per_100k,
+             split = ~label,
+             frame = ~frame, 
+             type = 'scatter',
+             mode = 'lines',
+             data = d,
+             color= ~age,
+             opacity = 1.0) %>%
+         add_trace( 
+             x = ~year, 
+             y = ~suicide_per_100k,
+             split = ~label,
+             frame = ~frame, 
+             type = 'scatter',
+             mode = 'lines',
+             data = c,
+             opacity = 0.4,
+             color= ~age) %>%
+         layout(
+             title = "연령별 한국과 세계자살율의 차이, 1985 - 2016"
+         ) %>%
+         animation_opts(
+             frame = 100, 
+             transition = 0, 
+             redraw = TRUE
+         ) %>%
+         animation_slider(
+             hide = T
+         ) %>%
+         animation_button(
+             x = 1, xanchor = "right", y = 0, yanchor = "bottom"
+         )
+plt3
+```
